@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <title>
+            OnlineDB
+        </title>
+    </head>
+    <body>
+        <h1>
+            Collections : 
+        </h1>
+        <h1 id="c1" onclick=""></h1><br>
+        <h1 id="c2"></h1><br>
+        <h1 id="c3"></h1><br>
+        <h1 id="c4"></h1><br>
+        <label for="createCollection">Create A Collection : </label>
+        <input type="text" name="createCollection" id="createCollection">
+        <button onclick="createCollection()" id="createCollectionSubmit">Create</button>
+    </body>
+    <script>
+        var loadMsg = new Object;
+        const socket = new WebSocket("ws://localhost:8080")
+        socket.onmessage = e=>{
+            if(e.data){
+                loadMsg = JSON.parse(e.data);
+                var msg = loadMsg;
+                if (msg[1]) {
+                    document.getElementById("c1").innerHTML = msg[1];
+                    document.getElementById("c1").addEventListener("click",(e)=>{location = `/editc?name=1`})
+                }
+                if (msg[2]) {
+                    document.getElementById("c2").innerHTML = msg[2];
+                    document.getElementById("c2").addEventListener("click",(e)=>{location = `/editc?name=2`})
+                }
+                if (msg[3]) {
+                    document.getElementById("c3").innerHTML = msg[3];
+                    document.getElementById("c3").addEventListener("click",(e)=>{location = `/editc?name=3`})
+                }
+                if (msg[4]) {
+                    document.getElementById("c4").innerHTML = msg[4];
+                    document.getElementById("c4").addEventListener("click",(e)=>{location = `/editc?name=4`})
+                }
+            }
+        }
+        function loadCollections(){
+            socket.send(`{"type":"loadCollections"}`)
+        }
+        function createCollection(){
+            if(document.getElementById("createCollection").value){
+                let cname = document.getElementById("createCollection").value;
+                if(cname != loadMsg[1] || cname != loadMsg[2] || cname != loadMsg[3] || cname != loadMsg[4]){
+                    socket.send(`{"type":"createCollection","cname":"${cname}"}`)
+                }
+            }
+        }
+        setInterval(loadCollections,3000)
+        setTimeout(loadCollections,1000)
+    </script>
+</html>

@@ -1,0 +1,87 @@
+<html>
+    <head>
+        <title>
+            Edit Collection
+        </title>
+    </head>
+    <body>
+        <h1>Edit Collection</h1>
+        <h2 id="cname"></h2>
+        <label for="changeCname">New Name</label>
+        <input type="text" name="changeCname" id="changeCname">
+        <input type="submit" value="Submit" onclick="cnameChange()" id="changeCnameSubmit"><br>
+        <input type="submit" id="deleteCname" value="Delete Colection" onclick="deleteCname()">
+        <p id="confirmDeleteTimer"></p>
+        <input type="submit" id="confirmDelete" style="display: none;" value="Confirm Deletion">
+    </body>
+    <script>
+        var msgObj;
+        var cname;
+        var cnameNum;
+        var doDelete = true;
+        var isDeleted = false;
+
+        const socket = new WebSocket("ws://localhost:8080")
+        // Get HTTP Query Data
+        function  getQuery(data){
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            return urlParams.get(data);
+        }
+        setTimeout(()=>{
+            socket.send(`{"type":"loadCollections"}`)
+        },1000)
+        socket.onmessage = e=>{
+            if(e.data){
+                if(`${parseInt(getQuery("name"))}`=="NaN"){location = "/"}
+                 msgObj = JSON.parse(e.data)
+                 cnameNum = parseInt(getQuery("name"));
+                 cname = msgObj[cnameNum];
+                if(cname == undefined){location = "/"}
+                document.getElementById("cname").innerHTML = "Name Of Collection You Are Editing : "+cname;
+                document.getElementById("changeCname").addEventListener("keydown",(e)=>{
+                    if(e.key == "Enter"){
+                        cnameChange()
+                    }
+                })
+            }
+        }
+        function cnameChange(){
+            if(document.getElementById("changeCname").value){
+            socket.send(`{"type":"changeCname","newName":"${document.getElementById("changeCname").value}","id":"${parseInt(getQuery("name"))}"}`)
+            document.getElementById("changeCname").disabled = true;
+            document.getElementById("changeCnameSubmit").disabled = true;
+            location.reload()
+            }
+        }
+        function deleteCname(){
+            var deleteTimer = 10;
+            setInterval(()=>{
+                if(deleteTimer == 0 ){
+                    doDelete = false;
+                    document.getElementById("confirmDeleteTimer").innerHTML = "Delete Timer Up"
+                    document.getElementById("confirmDelete").disabled = true;
+                } else {
+                    if(isDeleted == false){
+                    document.getElementById("confirmDeleteTimer").innerHTML = "You Have "+deleteTimer+" Seconds To Confirm";
+                    deleteTimer = deleteTimer - 1;
+                    } else {
+                        setTimeout(()=>{
+                            location = "/"
+                        },1000)
+                    }
+                }
+            },1000)
+            document.getElementById("deleteCname").style.display = "none"
+            document.getElementById("confirmDelete").style.display = "block";
+            document.getElementById("confirmDelete").addEventListener("click",e=>{
+                socket.send(`{"type":"deleteCollection","id":"${parseInt(getQuery('name'))}","cname":"${cname}"}`)
+                console.log("done")
+                document.getElementById("confirmDelete").disabled = true;
+                document.getElementById("confirmDeleteTimer").innerHTML = "Collection Deleted"
+                isDeleted = true;
+            })
+           // socket.send(`{"type":"deleteCollection","id":"${parseInt(getQuery('name'))}","cname":"${cname}"}`)
+        }
+    </script>
+</html>
